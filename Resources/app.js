@@ -68,7 +68,7 @@ if(Ti.version < 1.8) {
     oArgs.domain = "jabberes.org";
     oArgs.username = "marjo";
     oArgs.resource = 'jsjac_simpleclient';
-    oArgs.pass = "marjo83";
+    oArgs.pass = "x";
     oArgs.register = false;
     con.connect(oArgs);
 
