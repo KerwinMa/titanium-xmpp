@@ -596,7 +596,9 @@ JSJaCConnection.prototype.send = function(packet, cb, arg) {
 	try {
 		this._handleEvent(packet.pType() + '_out', packet);
 		this._handleEvent("packet_out", packet);
-		this._pQueue = this._pQueue.concat(packet.xml());
+
+		Ti.API.info("Send IQ:"+packet.xml());		
+		this._sendRaw(packet.xml());
 	} catch (e) {
 		this.oDbg.log(e.toString(), 1);
 		return false;
@@ -1031,8 +1033,7 @@ JSJaCConnection.prototype._doSASLAuthDigestMd5S2 = function(el) {
 	}
 
 	if(el.nodeName == 'success') {
-		//this._reInitStream(JSJaC.bind(this._doStreamBind, this));
-		this._reInitStream(this.domain,this._doStreamBind);
+		this._reInitStream(this.domain,JSJaC.bind(this._doStreamBind, this));
 	} else {// some extra turn
 		this._sendRaw("<response xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>", this._doSASLAuthDone);
 	}
@@ -1047,8 +1048,7 @@ JSJaCConnection.prototype._doSASLAuthDone = function(el) {
 		this._handleEvent('onerror', JSJaCError('401', 'auth', 'not-authorized'));
 		this.disconnect();
 	} else {
-		//this._reInitStream(JSJaC.bind(this._doStreamBind, this));
-		this._reInitStream(this.domain,this._doStreamBind);
+		this._reInitStream(this.domain,JSJaC.bind(this._doStreamBind, this));
 	}
 };
 
@@ -1061,7 +1061,7 @@ JSJaCConnection.prototype._doStreamBind = function() {
 	iq.appendNode("bind", {
 		xmlns : NS_BIND
 	}, [["resource", this.resource]]);
-	this.oDbg.log(iq.xml());
+	Ti.API.info(iq.xml());
 	this.send(iq, this._doXMPPSess);
 };
 
@@ -1179,11 +1179,16 @@ JSJaCConnection.prototype._handlePID = function(aJSJaCPacket) {
 JSJaCConnection.prototype._handleResponse = function(data) {
 	var response = data.replace(/\<\?xml.+\?\>/, "");
 	
-    if (response.match(/<stream:stream/))
+	//added some info for acomplish correct xml parsing
+    if (response.match(/<stream:stream/)){
         response += "</stream:stream>";
+      }
+	if (response.match(/<stream:features/)){
+		response = "<stream:stream xmlns:stream='http://etherx.jabber.org/streams'>" + response+ "</stream:stream>";
+	}
 	
 	//response = "<stream:stream xmlns:stream='http://etherx.jabber.org/streams'>" + response+ "</stream:stream>";
-	Ti.API.debug("Raw recieved:"+data);
+	Ti.API.info("Raw recieved:"+data);
 	var doc = Ti.XML.parseString(response);
 
 	if(!doc || doc.tagName == 'parsererror') {
@@ -1198,18 +1203,24 @@ JSJaCConnection.prototype._handleResponse = function(data) {
 		this.oDbg.log("Disconnected.", 1);
 	} 	
 	
-	//for(var i = 0; i < doc.childNodes.length; i++) {
-	//	Ti.API.debug(doc.childNodes.item(i).nodeName);
-	//}	
+	//debug
+	for(var i = 0; i < doc.childNodes.length; i++) {
+		Ti.API.info(doc.childNodes.item(i).nodeName);
+	}	
 
 	for(var i = 0; i < doc.childNodes.length; i++) {
 		if(this._sendRawCallbacks.length) {
 			var cb = this._sendRawCallbacks[0];
+			
+			Ti.API.debug(cb);
+			
 			this._sendRawCallbacks = this._sendRawCallbacks.slice(1, this._sendRawCallbacks.length);
 			cb.fn.call(this, doc.childNodes.item(i), cb.arg);
 			continue;
 		}
+		
 		this._inQ = this._inQ.concat(doc.childNodes.item(i));
+		this._checkInQ();
 	}
 };
 
