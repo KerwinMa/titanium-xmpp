@@ -1,26 +1,3 @@
-/* Copyright (c) 2005 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies
- * of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
- * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
- * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /**
  * @private
  * This code is taken from {@link
@@ -36,7 +13,7 @@
  * For details, see the script.aculo.us web site:
  * http://script.aculo.us/<br>
  */
-var JSJaCBuilder = {
+var JXMPPBuilder = {
   /**
    * @private
    */
@@ -46,10 +23,10 @@ var JSJaCBuilder = {
 
     // attributes (or text)
     if(arguments[2])
-      if(JSJaCBuilder._isStringOrNumber(arguments[2]) ||
+      if(JXMPPBuilder._isStringOrNumber(arguments[2]) ||
          (arguments[2] instanceof Array)) {
         element = this._createElement(doc, elementName, ns);
-        JSJaCBuilder._children(doc, element, arguments[2]);
+        JXMPPBuilder._children(doc, element, arguments[2]);
       } else {
         ns = arguments[2]['xmlns'] || ns;
         element = this._createElement(doc, elementName, ns);
@@ -62,7 +39,7 @@ var JSJaCBuilder = {
       element = this._createElement(doc, elementName, ns);
     // text, or array of children
     if(arguments[3])
-      JSJaCBuilder._children(doc, element, arguments[3], ns);
+      JXMPPBuilder._children(doc, element, arguments[3], ns);
 
     return element;
   },
@@ -98,21 +75,21 @@ var JSJaCBuilder = {
           var e = children[i];
           if (typeof e=='object') {
             if (e instanceof Array) {
-              var node = JSJaCBuilder.buildNode(doc, e[0], e[1], e[2], ns);
+              var node = JXMPPBuilder.buildNode(doc, e[0], e[1], e[2], ns);
               element.appendChild(node);
             } else {
               element.appendChild(e);
             }
           } else {
-            if(JSJaCBuilder._isStringOrNumber(e)) {
-              element.appendChild(JSJaCBuilder._text(doc, e));
+            if(JXMPPBuilder._isStringOrNumber(e)) {
+              element.appendChild(JXMPPBuilder._text(doc, e));
             }
           }
         }
       }
     } else {
-      if(JSJaCBuilder._isStringOrNumber(children)) {
-        element.appendChild(JSJaCBuilder._text(doc, children));
+      if(JXMPPBuilder._isStringOrNumber(children)) {
+        element.appendChild(JXMPPBuilder._text(doc, children));
       }
     }
   },

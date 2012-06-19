@@ -1,4 +1,3 @@
-
 /**
  * Creates a new set of hash keys
  * @class Reflects a set of sha1/md5 hash keys for securing sessions
@@ -6,7 +5,7 @@
  * @param {Function} func The hash function to be used for creating the keys
  * @param {Debugger} oDbg Reference to debugger implementation [optional]
  */
-function JSJaCKeys(func,oDbg) {
+function JXMPPKeys(func,oDbg) {
   var seed = Math.random();
 
   /**
@@ -26,7 +25,7 @@ function JSJaCKeys(func,oDbg) {
   }
 
   if (func) {
-    for (var i=1; i<JSJAC_NKEYS; i++) {
+    for (var i=1; i<JXMPP_NKEYS; i++) {
       this._k[i] = func(this._k[i-1]);
       oDbg.log(i+": "+this._k[i],4);
     }
@@ -35,7 +34,7 @@ function JSJaCKeys(func,oDbg) {
   /**
    * @private
    */
-  this._indexAt = JSJAC_NKEYS-1;
+  this._indexAt = JXMPP_NKEYS-1;
   /**
    * Gets next key from stack
    * @return New hash key

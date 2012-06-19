@@ -1,10 +1,4 @@
 /**
- * @fileoverview Collection of functions to make live easier
- * @author Stefan Strigler
- * @version $Revision$
- */
-
-/**
  * Convert special chars to HTML entities
  * @addon
  * @return The string with chars encoded for HTML

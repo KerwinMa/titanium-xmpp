@@ -2,7 +2,7 @@
  * @fileoverview Contains Debugger interface for Firebug and Safari
  * @class Implementation of the Debugger interface for {@link
  * http://www.getfirebug.com/ Firebug} and Safari
- * Creates a new debug logger to be passed to jsjac's connection
+ * Creates a new debug logger to be passed to JXMPP's connection
  * constructor. Of course you can use it for debugging in your code
  * too.
  * @constructor
@@ -11,7 +11,7 @@
  * of 0 means very low traffic whilst a value of 4 makes logging very
  * verbose about what's going on.
  */
-function JSJaCConsoleLogger(level) {
+function JXMPPConsoleLogger(level) {
   /**
    * @private
    */

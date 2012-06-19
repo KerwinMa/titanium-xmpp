@@ -52,10 +52,6 @@ var NS_FEATURE_COMPRESS = "http://jabber.org/features/compress";
 var NS_COMPRESS =     "http://jabber.org/protocol/compress";
 
 function STANZA_ERROR(code, type, cond) {
-  //????
-  //if (window == this)
-  //  return new STANZA_ERROR(code, type, cond);
-
   this.code = code;
   this.type = type;
   this.cond = cond;

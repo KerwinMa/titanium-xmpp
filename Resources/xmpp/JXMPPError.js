@@ -4,8 +4,8 @@
  * @private
  * @constructor
  */
-function JSJaCError(code,type,condition) {
-  var xmldoc = XmlDocument.create("error","jsjac");
+function JXMPPError(code,type,condition) {
+  var xmldoc = XmlDocument.create("error","JXMPP");
 
   xmldoc.documentElement.setAttribute('code',code);
   xmldoc.documentElement.setAttribute('type',type);
