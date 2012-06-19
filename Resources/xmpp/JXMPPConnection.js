@@ -1,11 +1,4 @@
 /**
- * @fileoverview Contains all things in common for all subtypes of connections
- * supported.
- * @author Stefan Strigler steve@zeank.in-berlin.de
- * @version $Revision$
- */
-
-/**
  * Creates a new Jabber connection (a connection to a jabber server)
  * @class Somewhat abstract base class for jabber connections. Contains all
  * of the code in common for all jabber connections
@@ -15,7 +8,7 @@
  * connecting to jabber<br>
  * * <code>oDbg</code> (optional) a reference to a debugger interface
  */
-function JSJaCConnection(oArg) {
+function JXMPPConnection(oArg) {
 
 	if (oArg && oArg.oDbg && oArg.oDbg.log) {
 		/**
@@ -38,7 +31,7 @@ function JSJaCConnection(oArg) {
 		 */
 		this.allow_plain = oArg.allow_plain;
 	else
-		this.allow_plain = JSJAC_ALLOW_PLAIN;
+		this.allow_plain = JXMPP_ALLOW_PLAIN;
 
 	
 	/**
@@ -90,7 +83,7 @@ function JSJaCConnection(oArg) {
 	/**
 	 * @private
 	 */
-	this._inactivity = JSJAC_INACTIVITY;
+	this._inactivity = JXMPP_INACTIVITY;
 	/**
 	 * @private
 	 */
@@ -98,7 +91,7 @@ function JSJaCConnection(oArg) {
 
 }
 
-JSJaCConnection.prototype.connect = function(oArg) {
+JXMPPConnection.prototype.connect = function(oArg) {
 	this._setStatus('connecting');
 
 	this.domain = oArg.domain || 'localhost';
@@ -128,8 +121,7 @@ JSJaCConnection.prototype.connect = function(oArg) {
 	this.jid = this.username + '@' + this.domain;
 	this.fulljid = this.jid + '/' + this.resource;
 
-	that = this;
-
+	that=this;
 	// setupRequest must be done after rid is created but before first use in reqstr
 	if (this._req == null) {
 		try {
@@ -138,7 +130,6 @@ JSJaCConnection.prototype.connect = function(oArg) {
 				port : this.port,
 				connected : function(e) {
 					//send initial request
-					that._socket = e.socket;
 
 					var reqstr = that._getInitialRequestString();
 					that.oDbg.log(reqstr, 4);
@@ -146,52 +137,15 @@ JSJaCConnection.prototype.connect = function(oArg) {
 					e.socket.write(Ti.createBuffer({
 						value : reqstr
 					}));
-					Ti.Stream.pump(e.socket, that.pumpCallback, 65536, true);
-					/*
-					 //read request
-					 // start read loop
-					 var readBuffer = Ti.createBuffer({
-					 length : 1024
-					 });
+					Ti.Stream.pump(e.socket, that._pumpCallback, 65536, true);
 
-					 var bytesRead = 0;
-					 var startData = "";
-					 var passToSecondPhase = false;
-					 while(( bytesRead = e.socket.read(readBuffer)) > -1) {
-					 var stringData = Ti.Codec.decodeString({
-					 source : readBuffer,
-					 length : bytesRead
-					 });
-					 startData += stringData;
-
-					 Ti.API.info("received <" + bytesRead + "> bytes of data. String representation of data is <" + stringData + ">");
-					 readBuffer.clear();
-
-					 if(startData.indexOf("stream:features") > -1) {
-					 passToSecondPhase = true;
-					 break;
-					 }
-					 if(startData.indexOf("</stream:stream>") > -1) {
-					 passToSecondPhase = false;
-					 break;
-					 }
-
-					 }
-
-					 if(passToSecondPhase) {
-					 Ti.Stream.pump(e.socket, that.pumpCallback, 65536, true);
-					 } else {
-					 Ti.API.info("socket has closed");
-					 e.socket.close();
-					 }
-					 */
 				},
-				error : JSJaC.bind(function(e) {
-					this.oDbg.log('Socket error', 1);
-				}, this),
-				closed : JSJaC.bind(function(e) {
-					this.oDbg.log('Socket close', 1);
-				}, this),
+				error : function(e) {
+					that.oDbg.log('Socket error', 1);
+				},
+				closed : function(e) {
+					that.oDbg.log('Socket close', 1);
+				},
 			});
 			this._req.connect();
 		} catch (e) {
@@ -201,28 +155,10 @@ JSJaCConnection.prototype.connect = function(oArg) {
 		this.oDbg.log('Socket allredy connected', 1);
 	}
 
-	/*
-
-	 this._req.r.onreadystatechange =
-	 JSJaC.bind(function() {
-	 var r = this._req.r;
-	 if (r.readyState == 4) {
-	 this.oDbg.log("async recv: "+r.responseText,4);
-	 this._handleInitialResponse(r); // handle response
-	 }
-	 }, this);
-
-	 if (typeof(this._req.r.onerror) != 'undefined') {
-	 this._req.r.onerror =
-	 JSJaC.bind(function(e) {
-	 this.oDbg.log('XmlHttpRequest error',1);
-	 }, this);
-	 }
-	 */
 
 };
 
-JSJaCConnection.prototype._getStreamID = function(streamData) {
+JXMPPConnection.prototype._getStreamID = function(streamData) {
 	this.oDbg.log(streamData, 4);
 
 	// extract stream id used for non-SASL authentication
@@ -253,7 +189,7 @@ JSJaCConnection.prototype._getStreamID = function(streamData) {
 
 };
 
-JSJaCConnection.prototype._getSplitXml = function(response) {
+JXMPPConnection.prototype._getSplitXml = function(response) {
 
 	var xmls = new Array();
 	//var reg = /<(message|iq|presence|stream|proceed|challenge|success|failure)(?=[\:\s\>])/gi;
@@ -272,7 +208,7 @@ JSJaCConnection.prototype._getSplitXml = function(response) {
 
 }
 
-JSJaCConnection.prototype.pumpCallback = function(e) {
+JXMPPConnection.prototype._pumpCallback = function(e) {
 	that.oDbg.log("pumpCallback ...", 1);
 
 	if (e.bytesProcessed == -1) {// EOF
@@ -309,7 +245,7 @@ JSJaCConnection.prototype.pumpCallback = function(e) {
 	}
 };
 
-JSJaCConnection.prototype._getInitialRequestString = function() {
+JXMPPConnection.prototype._getInitialRequestString = function() {
 	var reqstr = "<stream:stream to='" + this.host + "' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>";
 	return reqstr;
 };
@@ -320,18 +256,18 @@ JSJaCConnection.prototype._getInitialRequestString = function() {
  * <code>false</code> otherwise
  * @type boolean
  */
-JSJaCConnection.prototype.connected = function() {
+JXMPPConnection.prototype.connected = function() {
 	return this._connected;
 };
 
-JSJaCConnection.prototype.autenticated = function() {
+JXMPPConnection.prototype.autenticated = function() {
 	return this._autenticated;
 };
 
 /**
  * Disconnects from jabber server and terminates session (if applicable)
  */
-JSJaCConnection.prototype.disconnect = function() {
+JXMPPConnection.prototype.disconnect = function() {
 	this._setStatus('disconnecting');
 
 	if (!this.connected())
@@ -415,7 +351,7 @@ JSJaCConnection.prototype.disconnect = function() {
 
  * @param {Function} handler The handler to be called when event occurs. If your handler returns 'true' it cancels bubbling of the event. No other registered handlers for this event will be fired.
  */
-JSJaCConnection.prototype.registerHandler = function(event) {
+JXMPPConnection.prototype.registerHandler = function(event) {
 	event = event.toLowerCase();
 	// don't be case-sensitive here
 	var eArg = {
@@ -466,7 +402,7 @@ JSJaCConnection.prototype.registerHandler = function(event) {
 	this.oDbg.log("registered handler for event '" + event + "'", 2);
 };
 
-JSJaCConnection.prototype.unregisterHandler = function(event, handler) {
+JXMPPConnection.prototype.unregisterHandler = function(event, handler) {
 	event = event.toLowerCase();
 	// don't be case-sensitive here
 
@@ -494,7 +430,7 @@ JSJaCConnection.prototype.unregisterHandler = function(event, handler) {
 
  * @param {Function} handler The handler to be called when event occurs. If your handler returns 'true' it cancels bubbling of the event. No other registered handlers for this event will be fired.
  */
-JSJaCConnection.prototype.registerIQGet = function(childName, childNS, handler) {
+JXMPPConnection.prototype.registerIQGet = function(childName, childNS, handler) {
 	this.registerHandler('iq', childName, childNS, 'get', handler);
 };
 
@@ -508,13 +444,13 @@ JSJaCConnection.prototype.registerIQGet = function(childName, childNS, handler) 
 
  * @param {Function} handler The handler to be called when event occurs. If your handler returns 'true' it cancels bubbling of the event. No other registered handlers for this event will be fired.
  */
-JSJaCConnection.prototype.registerIQSet = function(childName, childNS, handler) {
+JXMPPConnection.prototype.registerIQSet = function(childName, childNS, handler) {
 	this.registerHandler('iq', childName, childNS, 'set', handler);
 };
 
 /**
- * Sends a JSJaCPacket
- * @param {JSJaCPacket} packet  The packet to send
+ * Sends a JXMPPPacket
+ * @param {JXMPPPacket} packet  The packet to send
  * @param {Function}    cb      The callback to be called if there's a reply
  * to this packet (identified by id) [optional]
  * @param {Object}      arg     Arguments passed to the callback
@@ -522,7 +458,7 @@ JSJaCConnection.prototype.registerIQSet = function(childName, childNS, handler) 
  * @return 'true' if sending was successfull, 'false' otherwise
  * @type boolean
  */
-JSJaCConnection.prototype.send = function(packet, cb, arg) {
+JXMPPConnection.prototype.send = function(packet, cb, arg) {
 	if (!packet || !packet.pType) {
 		this.oDbg.log("no packet: " + packet, 1);
 		return false;
@@ -538,7 +474,7 @@ JSJaCConnection.prototype.send = function(packet, cb, arg) {
 	if (cb) {
 		// generate an ID
 		if (!packet.getID()){
-			packet.setID('JSJaCID_' + this._ID++);
+			packet.setID('JXMPPID_' + this._ID++);
 		}
 
 		// register callback with id
@@ -562,7 +498,7 @@ JSJaCConnection.prototype.send = function(packet, cb, arg) {
 /**
  * Sends an IQ packet. Has default handlers for each reply type.
  * Those maybe overriden by passing an appropriate handler.
- * @param {JSJaCIQPacket} iq - the iq packet to send
+ * @param {JXMPPIQPacket} iq - the iq packet to send
  * @param {Object} handlers - object with properties 'error_handler',
  *                            'result_handler' and 'default_handler'
  *                            with appropriate functions
@@ -570,19 +506,19 @@ JSJaCConnection.prototype.send = function(packet, cb, arg) {
  * @return 'true' if sending was successfull, 'false' otherwise
  * @type boolean
  */
-JSJaCConnection.prototype.sendIQ = function(iq, handlers, arg) {
+JXMPPConnection.prototype.sendIQ = function(iq, handlers, arg) {
 	if (!iq || iq.pType() != 'iq') {
 		return false;
 	}
 
 	handlers = handlers || {};
-	var error_handler = handlers.error_handler || JSJaC.bind(function(aIq) {
+	var error_handler = handlers.error_handler || function(aIq) {
 		this.oDbg.log(aIq.xml(), 1);
-	}, this);
+	};
 
-	var result_handler = handlers.result_handler || JSJaC.bind(function(aIq) {
+	var result_handler = handlers.result_handler || function(aIq) {
 		this.oDbg.log(aIq.xml(), 2);
-	}, this);
+	};
 
 	var iqHandler = function(aIq, arg) {
 		switch (aIq.getType()) {
@@ -614,14 +550,14 @@ JSJaCConnection.prototype.sendIQ = function(iq, handlers, arg) {
  * </ul>
  * @type String
  */
-JSJaCConnection.prototype.status = function() {
+JXMPPConnection.prototype.status = function() {
 	return this._status;
 };
 
 /**
  * @private
  */
-JSJaCConnection.prototype._abort = function() {
+JXMPPConnection.prototype._abort = function() {
 	clearTimeout(this._timeout);
 	// remove timer
 
@@ -634,17 +570,17 @@ JSJaCConnection.prototype._abort = function() {
 
 	this.oDbg.log("Disconnected.", 1);
 	this._handleEvent('ondisconnect');
-	this._handleEvent('onerror', JSJaCError('500', 'cancel', 'service-unavailable'));
+	this._handleEvent('onerror', JXMPPError('500', 'cancel', 'service-unavailable'));
 };
 
 /**
  * @private
  */
-JSJaCConnection.prototype._checkInQ = function() {
+JXMPPConnection.prototype._checkInQ = function() {
 	for (var i = 0; i < this._inQ.length && i < 10; i++) {
 		var item = this._inQ[0];
 		this._inQ = this._inQ.slice(1, this._inQ.length);
-		var packet = JSJaCPacket.wrapNode(item);
+		var packet = JXMPPPacket.wrapNode(item);
 
 		if (!packet)
 			return;
@@ -661,7 +597,7 @@ JSJaCConnection.prototype._checkInQ = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._checkQueue = function() {
+JXMPPConnection.prototype._checkQueue = function() {
 	if (this._pQueue.length != 0)
 		this._process();
 	return true;
@@ -670,7 +606,7 @@ JSJaCConnection.prototype._checkQueue = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._doAuth = function() {
+JXMPPConnection.prototype._doAuth = function() {
 	if (this.has_sasl && this.authtype == 'nonsasl')
 		this.oDbg.log("Warning: SASL present but not used", 1);
 
@@ -685,7 +621,7 @@ JSJaCConnection.prototype._doAuth = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._doInBandReg = function() {
+JXMPPConnection.prototype._doInBandReg = function() {
 	if (this.authtype == 'saslanon' || this.authtype == 'anonymous')
 		return;
 	// bullshit - no need to register if anonymous
@@ -694,7 +630,7 @@ JSJaCConnection.prototype._doInBandReg = function() {
 	 * In-Band Registration see JEP-0077
 	 */
 
-	var iq = new JSJaCIQ();
+	var iq = new JXMPPIQ();
 	iq.setType('set');
 	iq.setID('reg1');
 	iq.appendNode("query", {
@@ -707,7 +643,7 @@ JSJaCConnection.prototype._doInBandReg = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._doInBandRegDone = function(iq) {
+JXMPPConnection.prototype._doInBandRegDone = function(iq) {
 	if (iq && iq.getType() == 'error') {// we failed to register
 		this.oDbg.log("registration failed for " + this.username, 0);
 		this._handleEvent('onerror', iq.getChild('error'));
@@ -722,14 +658,14 @@ JSJaCConnection.prototype._doInBandRegDone = function(iq) {
 /**
  * @private
  */
-JSJaCConnection.prototype._doLegacyAuth = function() {
+JXMPPConnection.prototype._doLegacyAuth = function() {
 	if (this.authtype != 'nonsasl' && this.authtype != 'anonymous')
 		return false;
 
 	/* ***
 	 * Non-SASL Authentication as described in JEP-0078
 	 */
-	var iq = new JSJaCIQ();
+	var iq = new JXMPPIQ();
 	iq.setIQ(null, 'get', 'auth1');
 	iq.appendNode('query', {
 		xmlns : NS_AUTH
@@ -742,7 +678,7 @@ JSJaCConnection.prototype._doLegacyAuth = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._doLegacyAuth2 = function(iq) {
+JXMPPConnection.prototype._doLegacyAuth2 = function(iq) {
 	if (!iq || iq.getType() != 'result') {
 		if (iq && iq.getType() == 'error')
 			this._handleEvent('onerror', iq.getChild('error'));
@@ -755,7 +691,7 @@ JSJaCConnection.prototype._doLegacyAuth2 = function(iq) {
 	/* ***
 	 * Send authentication
 	 */
-	var iq = new JSJaCIQ();
+	var iq = new JXMPPIQ();
 	iq.setIQ(null, 'set', 'auth2');
 
 	var query = iq.appendNode('query', {
@@ -782,7 +718,7 @@ JSJaCConnection.prototype._doLegacyAuth2 = function(iq) {
 /**
  * @private
  */
-JSJaCConnection.prototype._doLegacyAuthDone = function(iq) {
+JXMPPConnection.prototype._doLegacyAuthDone = function(iq) {
 	if (iq.getType() != 'result') {// auth' failed
 		if (iq.getType() == 'error')
 			this._handleEvent('onerror', iq.getChild('error'));
@@ -794,7 +730,7 @@ JSJaCConnection.prototype._doLegacyAuthDone = function(iq) {
 /**
  * @private
  */
-JSJaCConnection.prototype._doSASLAuth = function() {
+JXMPPConnection.prototype._doSASLAuth = function() {
 	if (this.authtype == 'nonsasl' || this.authtype == 'anonymous')
 		return false;
 
@@ -826,10 +762,10 @@ JSJaCConnection.prototype._doSASLAuth = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._doSASLAuthDigestMd5S1 = function(el) {
+JXMPPConnection.prototype._doSASLAuthDigestMd5S1 = function(el) {
 	if (el.nodeName != "challenge") {
 		this.oDbg.log("challenge missing", 1);
-		this._handleEvent('onerror', JSJaCError('401', 'auth', 'not-authorized'));
+		this._handleEvent('onerror', JXMPPError('401', 'auth', 'not-authorized'));
 		this.disconnect();
 	} else {
 		var challenge = b64decode(el.firstChild.nodeValue);
@@ -870,20 +806,20 @@ JSJaCConnection.prototype._doSASLAuthDigestMd5S1 = function(el) {
 	}
 };
 
-JSJaCConnection.prototype._reInitStream = function(to, cb) {
+JXMPPConnection.prototype._reInitStream = function(to, cb) {
 	this._sendRaw("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='" + to + "' version='1.0'>", cb);
 };
 
 /**
  * @private
  */
-JSJaCConnection.prototype._doSASLAuthDigestMd5S2 = function(el) {
+JXMPPConnection.prototype._doSASLAuthDigestMd5S2 = function(el) {
 	if (el.nodeName == 'failure') {
 		if (el.xml)
 			this.oDbg.log("auth error: " + el.xml, 1);
 		else
 			this.oDbg.log("auth error", 1);
-		this._handleEvent('onerror', JSJaCError('401', 'auth', 'not-authorized'));
+		this._handleEvent('onerror', JXMPPError('401', 'auth', 'not-authorized'));
 		this.disconnect();
 		return;
 	}
@@ -908,7 +844,7 @@ JSJaCConnection.prototype._doSASLAuthDigestMd5S2 = function(el) {
 	}
 
 	if (el.nodeName == 'success') {
-		this._reInitStream(this.domain, JSJaC.bind(this._doStreamBind, this));
+		this._reInitStream(this.domain,this._doStreamBind);
 	} else {// some extra turn
 		this._sendRaw("<response xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>", this._doSASLAuthDone);
 	}
@@ -917,21 +853,21 @@ JSJaCConnection.prototype._doSASLAuthDigestMd5S2 = function(el) {
 /**
  * @private
  */
-JSJaCConnection.prototype._doSASLAuthDone = function(el) {
+JXMPPConnection.prototype._doSASLAuthDone = function(el) {
 	if (el.nodeName != 'success') {
 		this.oDbg.log("auth failed", 1);
-		this._handleEvent('onerror', JSJaCError('401', 'auth', 'not-authorized'));
+		this._handleEvent('onerror', JXMPPError('401', 'auth', 'not-authorized'));
 		this.disconnect();
 	} else {
-		this._reInitStream(this.domain, JSJaC.bind(this._doStreamBind, this));
+		this._reInitStream(this.domain, this._doStreamBind);
 	}
 };
 
 /**
  * @private
  */
-JSJaCConnection.prototype._doStreamBind = function() {
-	var iq = new JSJaCIQ();
+JXMPPConnection.prototype._doStreamBind = function() {
+	var iq = new JXMPPIQ();
 	Ti.API.info(iq.xml());
 	iq.setIQ(null, 'set', 'bind_1');
 	Ti.API.info(iq.xml());
@@ -945,7 +881,7 @@ JSJaCConnection.prototype._doStreamBind = function() {
 /**
  * @private
  */
-JSJaCConnection.prototype._doXMPPSess = function(iq) {
+JXMPPConnection.prototype._doXMPPSess = function(iq) {
 	if (iq.getType() != 'result' || iq.getType() == 'error') {// failed
 		this.disconnect();
 		if (iq.getType() == 'error')
@@ -956,7 +892,7 @@ JSJaCConnection.prototype._doXMPPSess = function(iq) {
 	this.fulljid = iq.getChildVal("jid");
 	this.jid = this.fulljid.substring(0, this.fulljid.lastIndexOf('/'));
 
-	iq = new JSJaCIQ();
+	iq = new JXMPPIQ();
 	iq.setIQ(null, 'set', 'sess_1');
 	iq.appendNode("session", {
 		xmlns : NS_SESSION
@@ -968,7 +904,7 @@ JSJaCConnection.prototype._doXMPPSess = function(iq) {
 /**
  * @private
  */
-JSJaCConnection.prototype._doXMPPSessDone = function(iq) {
+JXMPPConnection.prototype._doXMPPSessDone = function(iq) {
 	if (iq.getType() != 'result' || iq.getType() == 'error') {// failed
 		this.disconnect();
 		if (iq.getType() == 'error')
@@ -981,7 +917,7 @@ JSJaCConnection.prototype._doXMPPSessDone = function(iq) {
 /**
  * @private
  */
-JSJaCConnection.prototype._handleEvent = function(event, arg) {
+JXMPPConnection.prototype._handleEvent = function(event, arg) {
 	event = event.toLowerCase();
 	// don't be case-sensitive here
 	this.oDbg.log("incoming event '" + event + "'", 3);
@@ -1010,11 +946,7 @@ JSJaCConnection.prototype._handleEvent = function(event, arg) {
 				}
 			} catch (e) {
 
-				if (e.fileName && e.lineNumber) {
-					this.oDbg.log(aEvent.handler + "\n>>>" + e.name + ": " + e.message + ' in ' + e.fileName + ' line ' + e.lineNumber, 1);
-				} else {
 					this.oDbg.log(aEvent.handler + "\n>>>" + e.name + ": " + e.message, 1);
-				}
 
 			}
 		}
@@ -1024,15 +956,15 @@ JSJaCConnection.prototype._handleEvent = function(event, arg) {
 /**
  * @private
  */
-JSJaCConnection.prototype._handlePID = function(aJSJaCPacket) {
-	if (!aJSJaCPacket.getID())
+JXMPPConnection.prototype._handlePID = function(aJXMPPPacket) {
+	if (!aJXMPPPacket.getID())
 		return false;
 	for (var i in this._regIDs) {
-		if (this._regIDs.hasOwnProperty(i) && this._regIDs[i] && i == aJSJaCPacket.getID()) {
-			var pID = aJSJaCPacket.getID();
+		if (this._regIDs.hasOwnProperty(i) && this._regIDs[i] && i == aJXMPPPacket.getID()) {
+			var pID = aJXMPPPacket.getID();
 			this.oDbg.log("handling " + pID, 3);
 			try {
-				if (this._regIDs[i].cb.call(this, aJSJaCPacket, this._regIDs[i].arg) === false) {
+				if (this._regIDs[i].cb.call(this, aJXMPPPacket, this._regIDs[i].arg) === false) {
 					// don't unregister
 					return false;
 				} else {
@@ -1053,7 +985,7 @@ JSJaCConnection.prototype._handlePID = function(aJSJaCPacket) {
 /**
  * @private
  */
-JSJaCConnection.prototype._handleResponse = function(data) {
+JXMPPConnection.prototype._handleResponse = function(data) {
 	Ti.API.info("Raw recieved:" + data);
 	var doc = Ti.XML.parseString(data);
 
@@ -1064,7 +996,7 @@ JSJaCConnection.prototype._handleResponse = function(data) {
 
 	if (doc.getElementsByTagName('conflict').length > 0) {
 		this._setStatus("session-terminate-conflict");
-		this._handleEvent('onerror', JSJaCError('503', 'cancel', 'session-terminate'));
+		this._handleEvent('onerror', JXMPPError('503', 'cancel', 'session-terminate'));
 		this._handleEvent('ondisconnect');
 		this.oDbg.log("Disconnected.", 1);
 	}
@@ -1093,7 +1025,7 @@ JSJaCConnection.prototype._handleResponse = function(data) {
 /**
  * @private
  */
-JSJaCConnection.prototype._parseStreamFeatures = function(doc) {
+JXMPPConnection.prototype._parseStreamFeatures = function(doc) {
 	if (!doc) {
 		this.oDbg.log("nothing to parse ... aborting", 1);
 		return false;
@@ -1117,7 +1049,7 @@ JSJaCConnection.prototype._parseStreamFeatures = function(doc) {
 		// remove timer
 		clearInterval(this._interval);
 		clearInterval(this._inQto);
-		this._handleEvent('onerror', JSJaCError('503', 'cancel', 'session-terminate'));
+		this._handleEvent('onerror', JXMPPError('503', 'cancel', 'session-terminate'));
 		this._connected = false;
 		this.oDbg.log("Disconnected.", 1);
 		this._handleEvent('ondisconnect');
@@ -1155,7 +1087,7 @@ JSJaCConnection.prototype._parseStreamFeatures = function(doc) {
 /**
  * @private
  */
-JSJaCConnection.prototype._registerPID = function(pID, cb, arg) {
+JXMPPConnection.prototype._registerPID = function(pID, cb, arg) {
 	if (!pID || !cb)
 		return false;
 	this._regIDs[pID] = new Object();
@@ -1166,48 +1098,11 @@ JSJaCConnection.prototype._registerPID = function(pID, cb, arg) {
 	return true;
 };
 
-/**
- * partial function binding sendEmpty to callback
- * @private
- */
-JSJaCConnection.prototype._prepSendEmpty = function(cb, ctx) {
-	return function() {
-		ctx._sendEmpty(JSJaC.bind(cb, ctx));
-	};
-};
-
-/**
- * send empty request
- * waiting for stream id to be able to proceed with authentication
- * @private
- */
-JSJaCConnection.prototype._sendEmpty = function(cb) {
-	var slot = this._getFreeSlot();
-	this._req = this._setupRequest(true);
-
-	this._req.r.onreadystatechange = JSJaC.bind(function() {
-		if (this._req.r.readyState == 4) {
-			this.oDbg.log("async recv: " + this._req.r.responseText, 4);
-			cb(this._req.r);
-			// handle response
-		}
-	}, this);
-
-	if ( typeof (this._req.r.onerror) != 'undefined') {
-		this._req.r.onerror = JSJaC.bind(function(e) {
-			this.oDbg.log('XmlHttpRequest error', 1);
-		}, this);
-	}
-
-	var reqstr = this._getRequestString();
-	this.oDbg.log("sending: " + reqstr, 4);
-	this._req.r.send(reqstr);
-};
 
 /**
  * @private
  */
-JSJaCConnection.prototype._sendRaw = function(xml, cb, arg) {
+JXMPPConnection.prototype._sendRaw = function(xml, cb, arg) {
 	if (cb) {
 		this._sendRawCallbacks.push({
 			fn : cb,
@@ -1228,7 +1123,7 @@ JSJaCConnection.prototype._sendRaw = function(xml, cb, arg) {
 /**
  * @private
  */
-JSJaCConnection.prototype._setStatus = function(status) {
+JXMPPConnection.prototype._setStatus = function(status) {
 	if (!status || status == '')
 		return;
 	if (status != this._status) {// status changed!
@@ -1241,7 +1136,7 @@ JSJaCConnection.prototype._setStatus = function(status) {
 /**
  * @private
  */
-JSJaCConnection.prototype._unregisterPID = function(pID) {
+JXMPPConnection.prototype._unregisterPID = function(pID) {
 	if (!this._regIDs[pID])
 		return false;
 	this._regIDs[pID] = null;
