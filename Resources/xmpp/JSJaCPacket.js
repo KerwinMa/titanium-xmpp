@@ -288,23 +288,22 @@ JSJaCPacket.prototype._getAttribute = function(attr) {
   return this.getNode().getAttribute(attr);
 };
 
-/*
-var document;
-if (document.ELEMENT_NODE == null) {
-  document.ELEMENT_NODE = 1;
-  document.ATTRIBUTE_NODE = 2;
-  document.TEXT_NODE = 3;
-  document.CDATA_SECTION_NODE = 4;
-  document.ENTITY_REFERENCE_NODE = 5;
-  document.ENTITY_NODE = 6;
-  document.PROCESSING_INSTRUCTION_NODE = 7;
-  document.COMMENT_NODE = 8;
-  document.DOCUMENT_NODE = 9;
-  document.DOCUMENT_TYPE_NODE = 10;
-  document.DOCUMENT_FRAGMENT_NODE = 11;
-  document.NOTATION_NODE = 12;
+
+if (Titanium.XML.Document.ELEMENT_NODE == null) {
+  Titanium.XML.Document.ELEMENT_NODE = 1;
+  Titanium.XML.Document.ATTRIBUTE_NODE = 2;
+  Titanium.XML.Document.TEXT_NODE = 3;
+  Titanium.XML.Document.CDATA_SECTION_NODE = 4;
+  Titanium.XML.Document.ENTITY_REFERENCE_NODE = 5;
+  Titanium.XML.Document.ENTITY_NODE = 6;
+  Titanium.XML.Document.PROCESSING_INSTRUCTION_NODE = 7;
+  Titanium.XML.Document.COMMENT_NODE = 8;
+  Titanium.XML.Document.DOCUMENT_NODE = 9;
+  Titanium.XML.Document.DOCUMENT_TYPE_NODE = 10;
+  Titanium.XML.Document.DOCUMENT_FRAGMENT_NODE = 11;
+  Titanium.XML.Document.NOTATION_NODE = 12;
 }
-*/
+
 
 /**
  * import node into this packets document
@@ -721,8 +720,7 @@ JSJaCPacket.wrapNode = function(node) {
   }
 
   if (oPacket) {
-    oPacket.getDoc().replaceChild(oPacket._importNode(node, true),
-                                  oPacket.getNode());
+    oPacket.getDoc().replaceChild(oPacket._importNode(node, true),oPacket.getNode());
   }
 
   return oPacket;

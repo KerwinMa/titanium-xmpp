@@ -159,9 +159,12 @@ JSJaCConnection.prototype.connect = function(oArg) {
 
 					var reqstr = that._getInitialRequestString();
 					that.oDbg.log(reqstr, 4);
+				
 					e.socket.write(Ti.createBuffer({
 						value : reqstr
 					}));
+					Ti.Stream.pump(e.socket, that.pumpCallback, 65536, true);
+					/*
 					//read request
 					// start read loop
 					var readBuffer = Ti.createBuffer({
@@ -193,12 +196,12 @@ JSJaCConnection.prototype.connect = function(oArg) {
 					}
 
 					if(passToSecondPhase) {
-						that._getStreamID(startData);
-						Ti.Stream.pump(e.socket, that.pumpCallback, 1024, true);
+						Ti.Stream.pump(e.socket, that.pumpCallback, 65536, true);
 					} else {
 						Ti.API.info("socket has closed");
 						e.socket.close();
 					}
+					*/
 				},
 				error : JSJaC.bind(function(e) {
 					this.oDbg.log('Socket error', 1);
@@ -267,19 +270,43 @@ JSJaCConnection.prototype._getStreamID = function(streamData) {
 
 };
 
+
+
+
+JSJaCConnection.prototype._getSplitXml = function(data) {
+	
+	var response = data.replace(/\<\?xml.+\?\>/, "");
+	var xmls=new Array();
+	
+    var reg=/<(message|iq|presence|stream|proceed|challenge|success|failure)(?=[\:\s\>])/gi;
+    var tags=response.split(reg);
+	for(a=1; a<tags.length; a=a+2){
+	   xmls.push("<"+tags[a]+tags[(a+1)]);
+	}	
+	return xmls;
+	
+}
+
 JSJaCConnection.prototype.pumpCallback = function(e) {
 	that.oDbg.log("pumpCallback ...", 1);
 
 	if(e.bytesProcessed == -1) {// EOF
 		that.oDbg.log("<EOF> - Can't perform any more operations on connected socket", 4);
 	} else if(e.errorDescription == null || e.errorDescription == "") {
-		that.oDbg.log("DATA: " + e.buffer.toString(), 4);
+		that.oDbg.log("DATA: " + e.buffer.toString(), 1);
 		var data = e.buffer.toString();
-
-		if(that.autenticated()) {
-			that._handleResponse(data);
+		var xmls=that._getSplitXml(data);
+		
+		for (i=0;i<xmls.length;i++){
+			var xml=xmls[i];
+			if(that.autenticated()) {
+				that._handleResponse(xml);
+			}
+			else{
+				that._getStreamID(xml);
+			}
 		}
-
+		
 	} else {
 		that.oDbg.log("READ ERROR: " + e.errorDescription, 4);
 	}
@@ -1177,17 +1204,6 @@ JSJaCConnection.prototype._handlePID = function(aJSJaCPacket) {
  * @private
  */
 JSJaCConnection.prototype._handleResponse = function(data) {
-	var response = data.replace(/\<\?xml.+\?\>/, "");
-	
-	//added some info for acomplish correct xml parsing
-    if (response.match(/<stream:stream/)){
-        response += "</stream:stream>";
-      }
-	if (response.match(/<stream:features/)){
-		response = "<stream:stream xmlns:stream='http://etherx.jabber.org/streams'>" + response+ "</stream:stream>";
-	}
-	
-	//response = "<stream:stream xmlns:stream='http://etherx.jabber.org/streams'>" + response+ "</stream:stream>";
 	Ti.API.info("Raw recieved:"+data);
 	var doc = Ti.XML.parseString(response);
 
