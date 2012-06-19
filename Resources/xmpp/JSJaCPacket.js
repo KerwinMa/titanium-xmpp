@@ -4,7 +4,7 @@
  * @version $Revision$
  */
 
-var JSJACPACKET_USE_XMLNS = true;
+//var JSJACPACKET_USE_XMLNS = false;
 
 /**
  * Creates a new packet with given root tag name (for internal use)
@@ -16,17 +16,7 @@ function JSJaCPacket(name) {
   /**
    * @private
    */
-  this.name = name;
-
-  if (typeof(JSJACPACKET_USE_XMLNS) != 'undefined' && JSJACPACKET_USE_XMLNS)
-    /**
-     * @private
-     */
-    this.doc = XmlDocument.create(name, NS_CLIENT);
-  else
-    /**
-     * @private
-     */
+    this.name = name;
     this.doc = XmlDocument.create(name,'');
 }
 
@@ -371,6 +361,8 @@ JSJaCPacket.prototype._setChildNode = function(nodeName, nodeValue) {
     } catch (e) { }
   else {
     try {
+    	
+     Ti.API.log("xxxxxxxxxxxxx"+this.getNode().namespaceURI);	
       aNode = this.getDoc().createElementNS(this.getNode().namespaceURI,
                                             nodeName);
     } catch (ex) {

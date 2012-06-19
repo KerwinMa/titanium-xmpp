@@ -68,10 +68,10 @@ var JSJaCBuilder = {
   },
 
   _createElement: function(doc, elementName, ns) {
-    try {
-      if (ns)
-        return doc.createElementNS(ns, elementName);
-    } catch (ex) { }
+    //try {
+    //  if (ns)
+    //    return doc.createElementNS(ns, elementName);
+    //} catch (ex) { }
 
     var el = doc.createElement(elementName);
 

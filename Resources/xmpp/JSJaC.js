@@ -4,7 +4,7 @@ var JSJaC = {
 		Ti.include(libraryName);
 	},
 	load : function() {
-		var includes = ['xmlextras', 'jsextras', 'crypt', 'JSJaCConfig', 'JSJaCConstants', 'JSJaCCookie', 'JSJaCJSON', 'JSJaCJID', 'JSJaCBuilder', 'JSJaCPacket', 'JSJaCError', 'JSJaCKeys', 'JSJaCConnection', 'JSJaCConsoleLogger'];
+		var includes = ['xmlextras', 'jsextras', 'crypt', 'JSJaCConfig', 'JSJaCConstants', 'JSJaCJSON', 'JSJaCJID', 'JSJaCBuilder', 'JSJaCPacket', 'JSJaCError', 'JSJaCKeys', 'JSJaCConnection', 'JSJaCConsoleLogger'];
 		for( i = 0; i < includes.length; i++)
 			this.require(includes[i] + '.js');
 	},

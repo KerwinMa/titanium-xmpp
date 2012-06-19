@@ -22,64 +22,7 @@
  * @version $Revision$
  */
 
-/**
- * XmlHttp factory
- * @private
- */
-function XmlHttp() {
-}
 
-/**
- * creates a cross browser compliant XmlHttpRequest object
- */
-XmlHttp.create = function() {
-	try {
-		if(window.XMLHttpRequest) {
-			var req = new XMLHttpRequest();
-
-			// some versions of Moz do not support the readyState property
-			// and the onreadystate event so we patch it!
-			if(req.readyState == null) {
-				req.readyState = 1;
-				req.addEventListener("load", function() {
-					req.readyState = 4;
-					if( typeof req.onreadystatechange == "function")
-						req.onreadystatechange();
-				}, false);
-			}
-
-			return req;
-		}
-		if(window.ActiveXObject) {
-			return new ActiveXObject(XmlHttp.getPrefix() + ".XmlHttp");
-		}
-	} catch (ex) {
-	}
-	// fell through
-	throw new Error("Your browser does not support XmlHttp objects");
-};
-
-/**
- * used to find the Automation server name
- * @private
- */
-XmlHttp.getPrefix = function() {
-	if(XmlHttp.prefix)// I know what you did last summer
-		return XmlHttp.prefix;
-
-	var prefixes = ["MSXML2", "Microsoft", "MSXML", "MSXML3"];
-	var o;
-	for(var i = 0; i < prefixes.length; i++) {
-		try {
-			// try to create the objects
-			o = new ActiveXObject(prefixes[i] + ".XmlHttp");
-			return XmlHttp.prefix = prefixes[i];
-		} catch (ex) {
-		};
-	}
-
-	throw new Error("Could not find an installed XML parser");
-};
 
 /**
  * XmlDocument factory
@@ -104,23 +47,6 @@ XmlDocument.create = function(name, ns) {
 					doc.onreadystatechange();
 			}, false);
 		}
-		/*
-		 if (document.implementation && document.implementation.createDocument) {
-		 doc = document.implementation.createDocument(ns, name, null);
-		 // some versions of Moz do not support the readyState property
-		 // and the onreadystate event so we patch it!
-		 if (doc.readyState == null) {
-		 doc.readyState = 1;
-		 doc.addEventListener("load", function () {
-		 doc.readyState = 4;
-		 if (typeof doc.onreadystatechange == "function")
-		 doc.onreadystatechange();
-		 }, false);
-		 }
-		 } else if (window.ActiveXObject) {
-		 doc = new ActiveXObject(XmlDocument.getPrefix() + ".DomDocument");
-		 }
-		 */
 		if(!doc.documentElement || doc.documentElement.tagName != name || (doc.documentElement.namespaceURI && doc.documentElement.namespaceURI != ns)) {
 			try {
 				if(ns != '')
@@ -133,7 +59,6 @@ XmlDocument.create = function(name, ns) {
 				if(doc.documentElement == null)
 					doc.appendChild(doc.createElement(name));
 
-				// fix buggy opera 8.5x
 				if(ns != '' && doc.documentElement.getAttribute('xmlns') != ns) {
 					doc.documentElement.setAttribute('xmlns', ns);
 				}
