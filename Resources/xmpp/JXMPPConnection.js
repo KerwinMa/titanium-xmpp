@@ -51,19 +51,11 @@ function JXMPPConnection(oArg) {
 	/**
 	 * @private
 	 */
-	this._keys = null;
-	/**
-	 * @private
-	 */
 	this._ID = 0;
 	/**
 	 * @private
 	 */
 	this._inQ = new Array();
-	/**
-	 * @private
-	 */
-	this._pQueue = new Array();
 	/**
 	 * @private
 	 */
@@ -80,10 +72,6 @@ function JXMPPConnection(oArg) {
 	 * @private
 	 */
 	this._errcnt = 0;
-	/**
-	 * @private
-	 */
-	this._inactivity = JXMPP_INACTIVITY;
 	/**
 	 * @private
 	 */
@@ -197,7 +185,7 @@ JXMPPConnection.prototype._getSplitXml = function(response) {
 	var tags = response.split(reg);
 	
 	if(tags.length==1){  //not recognized tags
-		xmls.push(tags);
+		xmls.push(tags[0]);
 	}
 	else{
 		for ( a = 1; a < tags.length; a = a + 2) {
@@ -207,36 +195,48 @@ JXMPPConnection.prototype._getSplitXml = function(response) {
 	return xmls;
 
 }
+													
+JXMPPConnection.prototype._fixXmlToParse = function(response) {
+	
+	if(response.indexOf("<stream:stream")==0) {
+				response+="</stream:stream>";
+				that.oDbg.log("fixed XML finish: " + response, 4);
+	}
+	
+	if(response.indexOf("<stream:features>")==0) {
+				response="<stream:stream>"+response+"</stream:stream>";
+				that.oDbg.log("fixed XML: " + response, 4);
+	}
+	return response;
+}
 
 JXMPPConnection.prototype._pumpCallback = function(e) {
-	that.oDbg.log("pumpCallback ...", 1);
+	//that.oDbg.log("pumpCallback ...", 1);
 
 	if (e.bytesProcessed == -1) {// EOF
 		that.oDbg.log("<EOF> - Can't perform any more operations on connected socket", 1);
 	} else if (e.errorDescription == null || e.errorDescription == "") {
-		that.oDbg.log("DATA: " + e.buffer.toString(), 1);
+		that.oDbg.log("DATA>>>: " + e.buffer.toString(), 1);
 		var data = e.buffer.toString();
 		
 		//fix xml finish and prefix
 		var response = data.replace(/\<\?xml.+\?\>/, "");
-		if(response.indexOf("<stream:stream")==0) {
-				response+="</stream:stream>";
-				that.oDbg.log("fixed XML finish: " + response, 1);
-		}
-		
-		if(response.indexOf("<stream:features>")==0) {
-			response="<stream:stream>"+response+"</stream:stream>";
-			that.oDbg.log("fixed XML: " + response, 1);
+		if(response.indexOf("</stream:stream>")==0) {
+			that.oDbg.log("end connection XML: " + response, 4);
+			that._req.close();
+			return;
 		}
 
 		if (that.autenticated()) {
 			var xmls = that._getSplitXml(response);
 			for ( i = 0; i < xmls.length; i++) {
 				var xml = xmls[i];
+				xml=that._fixXmlToParse(xml);
 				that.oDbg.log("_handleResponse: " + xml, 1);
 				that._handleResponse(xml);
 			}
 		} else {
+			response=that._fixXmlToParse(response);
 			that._getStreamID(response);
 		}
 
@@ -264,6 +264,8 @@ JXMPPConnection.prototype.autenticated = function() {
 	return this._autenticated;
 };
 
+
+
 /**
  * Disconnects from jabber server and terminates session (if applicable)
  */
@@ -273,24 +275,9 @@ JXMPPConnection.prototype.disconnect = function() {
 	if (!this.connected())
 		return;
 	this._connected = false;
-
-	clearInterval(this._interval);
-	clearInterval(this._inQto);
-
-	if (this._timeout)
-		clearTimeout(this._timeout);
-	// remove timer
-
-	var slot = this._getFreeSlot();
-	// Intentionally synchronous
-	this._req = this._setupRequest(false);
-
-	var request = this._getRequestString(false, true);
-
+	var request = '</stream:stream>';
 	this.oDbg.log("Disconnecting: " + request, 4);
-	this._req.r.send(request);
-
-		this.oDbg.log("Disconnected: " + this._req.r.responseText, 2);
+	this._sendRaw(request);
 	this._handleEvent('ondisconnect');
 };
 
@@ -558,16 +545,9 @@ JXMPPConnection.prototype.status = function() {
  * @private
  */
 JXMPPConnection.prototype._abort = function() {
-	clearTimeout(this._timeout);
-	// remove timer
-
-	clearInterval(this._inQto);
-	clearInterval(this._interval);
-
 	this._connected = false;
-
 	this._setStatus('aborted');
-
+	this._req.close();
 	this.oDbg.log("Disconnected.", 1);
 	this._handleEvent('ondisconnect');
 	this._handleEvent('onerror', JXMPPError('500', 'cancel', 'service-unavailable'));
@@ -594,14 +574,6 @@ JXMPPConnection.prototype._checkInQ = function() {
 	}
 };
 
-/**
- * @private
- */
-JXMPPConnection.prototype._checkQueue = function() {
-	if (this._pQueue.length != 0)
-		this._process();
-	return true;
-};
 
 /**
  * @private
@@ -868,13 +840,10 @@ JXMPPConnection.prototype._doSASLAuthDone = function(el) {
  */
 JXMPPConnection.prototype._doStreamBind = function() {
 	var iq = new JXMPPIQ();
-	Ti.API.info(iq.xml());
 	iq.setIQ(null, 'set', 'bind_1');
-	Ti.API.info(iq.xml());
 	iq.appendNode("bind", {
 		xmlns : NS_BIND
 	}, [["resource", this.resource]]);
-	Ti.API.info(iq.xml());
 	this.send(iq, this._doXMPPSess);
 };
 
@@ -986,7 +955,6 @@ JXMPPConnection.prototype._handlePID = function(aJXMPPPacket) {
  * @private
  */
 JXMPPConnection.prototype._handleResponse = function(data) {
-	Ti.API.info("Raw recieved:" + data);
 	var doc = Ti.XML.parseString(data);
 
 	if (!doc || doc.tagName == 'parsererror') {
@@ -998,12 +966,8 @@ JXMPPConnection.prototype._handleResponse = function(data) {
 		this._setStatus("session-terminate-conflict");
 		this._handleEvent('onerror', JXMPPError('503', 'cancel', 'session-terminate'));
 		this._handleEvent('ondisconnect');
+		this._req.close();
 		this.oDbg.log("Disconnected.", 1);
-	}
-
-	//debug
-	for (var i = 0; i < doc.childNodes.length; i++) {
-		Ti.API.info("XML elements:"+doc.childNodes.item(i).nodeName);
 	}
 
 	for (var i = 0; i < doc.childNodes.length; i++) {
@@ -1045,14 +1009,11 @@ JXMPPConnection.prototype._parseStreamFeatures = function(doc) {
 
 	if (errorTag) {
 		this._setStatus("internal_server_error");
-		clearTimeout(this._timeout);
-		// remove timer
-		clearInterval(this._interval);
-		clearInterval(this._inQto);
 		this._handleEvent('onerror', JXMPPError('503', 'cancel', 'session-terminate'));
 		this._connected = false;
 		this.oDbg.log("Disconnected.", 1);
 		this._handleEvent('ondisconnect');
+		this._req.close();
 		return false;
 	}
 
@@ -1109,8 +1070,6 @@ JXMPPConnection.prototype._sendRaw = function(xml, cb, arg) {
 			arg : arg
 		});
 	}
-	//this._pQueue.push(xml);
-	//this._process();
 
 	this.oDbg.log("Raw Send:" + xml, 3);
 	this._req.write(Ti.createBuffer({

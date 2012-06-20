@@ -296,11 +296,12 @@ JXMPPPacket.prototype._importNode = function(node, allChildren) {
   case Titanium.XML.Document.ELEMENT_NODE:
 
   var newNode;
-  if (this.getDoc().createElementNS) {
-    newNode = this.getDoc().createElementNS(node.namespaceURI, node.nodeName);
-  } else {
-    newNode = this.getDoc().createElement(node.nodeName);
-  }
+  //if (this.getDoc().createElementNS) {
+  //  newNode = this.getDoc().createElementNS(node.namespaceURI, node.nodeName);
+  //} else {
+  newNode = this.getDoc().createElement(node.nodeName);
+  //query.setAttribute('xmlns',xmlns); ???
+  //}
 
   var i, il;
   /* does the node have any attributes to add? */
@@ -309,10 +310,6 @@ JXMPPPacket.prototype._importNode = function(node, allChildren) {
       var attr = node.attributes.item(i);
       if (attr.nodeName == 'xmlns' &&
           (newNode.getAttribute('xmlns') != null || newNode.namespaceURI)) {
-          // skip setting an xmlns attribute as it has been set
-          // before already by createElementNS
-
-          // namespaceURI is '' for IE<9
           continue;
       }
       if (newNode.setAttributeNS && attr.namespaceURI) {
@@ -547,12 +544,8 @@ JXMPPIQ.prototype.setIQ = function(to,type,id) {
  */
 JXMPPIQ.prototype.setQuery = function(xmlns) {
   var query;
-  try {
-    query = this.getDoc().createElementNS(xmlns,'query');
-  } catch (e) {
-    query = this.getDoc().createElement('query');
-	query.setAttribute('xmlns',xmlns);
-  }
+  query = this.getDoc().createElement('query');
+  query.setAttribute('xmlns',xmlns);
   this.getNode().appendChild(query);
   return query;
 };
