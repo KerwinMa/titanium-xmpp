@@ -204,7 +204,7 @@ JXMPPConnection.prototype._fixXmlToParse = function(response) {
 	}
 	
 	if(response.indexOf("<stream:features>")==0) {
-				response="<stream:stream>"+response+"</stream:stream>";
+				response="<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>"+response+"</stream:stream>";
 				that.oDbg.log("fixed XML: " + response, 4);
 	}
 	return response;

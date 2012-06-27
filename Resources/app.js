@@ -41,20 +41,27 @@ if (Ti.version < 1.8) {
 		Ti.API.debug("Handled:" + a);
 	}
 	function handleIQ(oIQ) {
-		document.getElementById('iResp').innerHTML += "<div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div>';
-		document.getElementById('iResp').lastChild.scrollIntoView();
 		con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 
 	}
+	
+	
+	function sendMsg(to,body) {
+  
+	    var oMsg = new JXMPPMessage();
+	    oMsg.setTo(new JXMPPJID(to));
+	    oMsg.setBody(body);
+	    con.send(oMsg);
 
-	function handleMessage(oJSJaCPacket) {
-		var html = '';
-		html += '<div class="msg"><b>Received Message from ' + oJSJaCPacket.getFromJID() + ':</b><br/>';
-		html += oJSJaCPacket.getBody().htmlEnc() + '</div>';
-		document.getElementById('iResp').innerHTML += html;
-		document.getElementById('iResp').lastChild.scrollIntoView();
 	}
 
+	function handleMessage(message) {
+		
+		Ti.API.log("From:"+message.getFromJID()+"\n Message:"+message.getBody());
+		sendMsg("marjo@jabberes.org","Test text");
+	}
+
+/*
 	function handlePresence(oJSJaCPacket) {
 		var html = '<div class="msg">';
 		if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow())
@@ -73,33 +80,10 @@ if (Ti.version < 1.8) {
 		document.getElementById('iResp').innerHTML += html;
 		document.getElementById('iResp').lastChild.scrollIntoView();
 	}
-
-	function handleError(e) {
-		if (con.connected())
-			con.disconnect();
-	}
-
-	function handleStatusChanged(status) {
-		alert("status changed: " + status);
-	}
-
-	function handleConnected() {
-		con.send(new JXMPPPresence());
-	}
-
+	
 	function handleDisconnected() {
 		document.getElementById('login_pane').style.display = '';
 		document.getElementById('sendmsg_pane').style.display = 'none';
-	}
-
-	function handleIqVersion(iq) {
-		var x=[iq.buildNode('name', 'jsjac simpleclient'), 
-				iq.buildNode('version', JXMPP.Version), 
-				iq.buildNode('os', "navigator.userAgent")];
-		Ti.API.log("xxx:"+x);
-		var a=iq.reply(x);
-		con.send(a);
-		return true;
 	}
 
 	function handleIqTime(iq) {
@@ -111,10 +95,39 @@ if (Ti.version < 1.8) {
 		return true;
 	}
 
+*/
+	function handleError(e) {
+		if (con.connected())
+			con.disconnect();
+	}
+
+	function handleStatusChanged(status) {
+		alert("status changed: " + status);
+	}
+
+	function handleConnected() {
+		con.send(new JXMPPPresence());
+		sendMsg("marjo@jabberes.org","Test!");
+	}
+
+	
+
+	function handleIqVersion(iq) {
+		var x=[iq.buildNode('name', 'jsjac simpleclient'), 
+				iq.buildNode('version', JXMPP.Version), 
+				iq.buildNode('os', "navigator.userAgent")];
+		Ti.API.log("xxx:"+x);
+		var a=iq.reply(x);
+		con.send(a);
+		return true;
+	}
+
+
+
 	function setupCon(oCon) {
-		oCon.registerHandler('message', debug);
+		oCon.registerHandler('message', handleMessage);
 		oCon.registerHandler('presence', debug);
-		oCon.registerHandler('iq', debug);
+		oCon.registerHandler('iq', handleIQ);
 		oCon.registerHandler('onconnect', handleConnected);
 		oCon.registerHandler('onerror', debug);
 		oCon.registerHandler('status_changed', debug);
@@ -138,7 +151,7 @@ if (Ti.version < 1.8) {
 	oArgs.host = "jabberes.org";
 	oArgs.domain = "jabberes.org";
 	oArgs.username = "jmartin";
-	oArgs.resource = 'JXMPP_simpleclient';
+	oArgs.resource = 'JXMPP_simpleclients';
 	oArgs.pass = "X";
 	oArgs.register = false;
 	con.connect(oArgs);
