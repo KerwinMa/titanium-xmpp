@@ -40,15 +40,17 @@ if (Ti.version < 1.8) {
 	var debug = function(a) {
 		Ti.API.debug("Handled:" + a);
 	}
+	
+	
 	function handleIQ(oIQ) {
-		con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
+		con.send(oIQ.errorReply(JXMPP.CONSTANTS.ERR_FEATURE_NOT_IMPLEMENTED));
 
 	}
 	
 	
 	function sendMsg(to,body) {
   
-	    var oMsg = new JXMPPMessage();
+	    var oMsg = new JXMPP.Packet.JXMPPMessage();
 	    oMsg.setTo(new JXMPPJID(to));
 	    oMsg.setBody(body);
 	    con.send(oMsg);
@@ -106,8 +108,8 @@ if (Ti.version < 1.8) {
 	}
 
 	function handleConnected() {
-		con.send(new JXMPPPresence());
-		sendMsg("marjo@jabberes.org","Test!");
+		con.send(new JXMPP.Packet.Presence());
+		//sendMsg("marjo@jabberes.org","Test!");
 	}
 
 	
@@ -133,16 +135,14 @@ if (Ti.version < 1.8) {
 		oCon.registerHandler('status_changed', debug);
 		oCon.registerHandler('ondisconnect', debug);
 
-		oCon.registerIQGet('query', NS_VERSION, handleIqVersion);
-		oCon.registerIQGet('query', NS_TIME, handleIqTime);
+		oCon.registerIQGet('query', JXMPP.CONSTANTS.NS_VERSION, handleIqVersion);
+		//oCon.registerIQGet('query', JXMPP.Constants.NS_TIME, handleIqTime);
 	}
 
 
-	Ti.include("xmpp/JXMPP.js");
-	JXMPP.load();
-	var con = new JXMPPConnection({
-		oDbg : new JXMPPConsoleLogger(4)
-	});
+	
+	var JXMPP=require("xmpp/JXMPP");
+	var con = new JXMPP.Connection();
 
 	setupCon(con);
 
@@ -152,7 +152,7 @@ if (Ti.version < 1.8) {
 	oArgs.domain = "jabberes.org";
 	oArgs.username = "jmartin";
 	oArgs.resource = 'JXMPP_simpleclients';
-	oArgs.pass = "X";
+	oArgs.pass = "x";
 	oArgs.register = false;
 	con.connect(oArgs);
 

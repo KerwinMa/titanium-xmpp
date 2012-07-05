@@ -1,3 +1,6 @@
+var XmlDocument = require('JXMPPXmlDocument');
+var JXMPPBuilder = require('JXMPPBuilder');
+
 /**
  * Creates a new packet with given root tag name (for internal use)
  * @class Somewhat abstract base class for all kinds of specialised packets
@@ -245,7 +248,7 @@ JXMPPPacket.prototype.errorReply = function(stanza_error) {
 
   rPacket.appendNode('error',
                      {code: stanza_error.code, type: stanza_error.type},
-                     [[stanza_error.cond, {xmlns: NS_STANZAS}]]);
+                     [[stanza_error.cond, {xmlns: Constants.NS_STANZAS}]]);
 
   return rPacket;
 };
@@ -384,12 +387,15 @@ JXMPPPacket.prototype._setChildNode = function(nodeName, nodeValue) {
  * @type {@link http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-1950641247 Node}
  */
 JXMPPPacket.prototype.buildNode = function(elementName) {
-  return JXMPPBuilder.buildNode(this.getDoc(),
+	
+  return new JXMPPBuilder().buildNode(this.getDoc(),
                                 elementName,
                                 arguments[1],
                                 arguments[2],
                                 arguments[3]);
 };
+
+
 
 /**
  * Appends node created by buildNode to this packets parent node.
@@ -702,3 +708,9 @@ JXMPPPacket.wrapNode = function(node) {
 
   return oPacket;
 };
+
+
+exports.Packet = JXMPPPacket;
+exports.Message = JXMPPMessage;
+exports.Presence = JXMPPPresence;
+exports.JXMPPIQ = JXMPPIQ;

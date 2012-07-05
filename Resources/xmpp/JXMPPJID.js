@@ -197,3 +197,5 @@ function JXMPPJIDInvalidException(message) {
    */
   this.name = "JXMPPJIDInvalidException";
 }
+
+module.exports = JXMPPJID;

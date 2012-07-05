@@ -13,14 +13,6 @@ XmlDocument.create = function(name, ns) {
 		// DOM2
 		var baseDoc = Ti.XML.parseString("<a/>");
 		var doc = baseDoc.implementation.createDocument(ns, name, null);
-		if(doc.readyState == null) {
-			doc.readyState = 1;
-			doc.addEventListener("load", function() {
-				doc.readyState = 4;
-				if( typeof doc.onreadystatechange == "function")
-					doc.onreadystatechange();
-			}, false);
-		}
 		if(!doc.documentElement || doc.documentElement.tagName != name || (doc.documentElement.namespaceURI && doc.documentElement.namespaceURI != ns)) {
 			try {
 				if(ns != '')
@@ -68,43 +60,4 @@ XmlDocument.getPrefix = function() {
 	throw new Error("Could not find an installed XML parser");
 };
 
-// Create the loadXML method
-if( typeof (Titanium.XML.Document) != 'undefined') {
-
-	/**
-	 * XMLDocument did not extend the Document interface in some
-	 * versions of Mozilla.
-	 * @private
-	 */
-	Titanium.XML.Document.prototype.loadXML = function(s) {
-
-		// parse the string to a new doc
-		var doc2 = Ti.XML.parseString(s, "text/xml");
-
-		// remove all initial children
-		while(this.hasChildNodes())
-		this.removeChild(this.lastChild);
-
-		// insert and import nodes
-		for(var i = 0; i < doc2.childNodes.length; i++) {
-			this.appendChild(this.importNode(doc2.childNodes[i], true));
-		}
-	};
-}
-
-/*
- if (window.XMLSerializer &&
- window.Node && Node.prototype && Node.prototype.__defineGetter__) {
-
- XMLDocument.prototype.__defineGetter__("xml", function () {
- return (new XMLSerializer()).serializeToString(this);
- });
- Document.prototype.__defineGetter__("xml", function () {
- return (new XMLSerializer()).serializeToString(this);
- });
-
- Node.prototype.__defineGetter__("xml", function () {
- return (new XMLSerializer()).serializeToString(this);
- });
- }
- */
+module.exports = XmlDocument;
